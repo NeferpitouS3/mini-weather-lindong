@@ -12,9 +12,9 @@ public class NetUtil {
     public static final int NETWORN_WIFI = 1;     //正在使用wifi
     public static final int NETWORN_MOBILE = 2;   //正在使用手机流量
 
+
     public static int getNetworkState(Context context){
         ConnectivityManager connManager = (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);  //获取系统的连接服务
-
         NetworkInfo networkInfo = connManager.getActiveNetworkInfo();   //获取网络连接状态
         if(networkInfo==null){
             return NETWORN_NONE;
