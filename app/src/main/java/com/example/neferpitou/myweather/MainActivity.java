@@ -57,6 +57,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.weather_info);
+        Log.d("myWeather", "程序开始");
 
         mUpdataBtn = (ImageView) findViewById(R.id.title_update_btn);
         mUpdataBtn.setOnClickListener(this);    //在该类里实现了点击接口（下面的onClick方法）
@@ -129,7 +130,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
                             } else if (xmlPullParser.getName().equals("updatetime")) {
                                 eventType = xmlPullParser.next();
                                 todayWeather.setUpdatetime(xmlPullParser.getText());
-                            } else if (xmlPullParser.getName().equals("shidu")) {
+                            }else if (xmlPullParser.getName().equals("shidu")) {
                                 eventType = xmlPullParser.next();
                                 todayWeather.setShidu(xmlPullParser.getText());
                             } else if (xmlPullParser.getName().equals("wendu")) {
@@ -188,7 +189,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
      * @param cityCode
      */
 
-    private void queryWeatherCOde(String cityCode) {
+    private void queryWeatherCode(String cityCode) {
         final String address = "http://wthrcdn.etouch.cn/WeatherApi?citykey=" + cityCode;
         Log.d("myWeather", address);
         new Thread(new Runnable() {
@@ -236,19 +237,21 @@ public class MainActivity extends Activity implements View.OnClickListener {
     @Override
     public void onClick(View view) {
         if (view.getId() == R.id.title_update_btn) {
+            Log.d("myWeather", "点刷新");
             SharedPreferences sharedPreferences = getSharedPreferences("config", MODE_PRIVATE);
-            String cityCode = sharedPreferences.getString("main_city_code", "101160101");       //此北京 101010100，兰州 101160101
+            String cityCode = sharedPreferences.getString("main_city_code", "101210101");       //此北京 101010100，兰州 101160101 苍南101210709
             Log.d("myWeather", cityCode);
 
             if (NetUtil.getNetworkState(this) != NetUtil.NETWORN_NONE) {
                 Log.d("myWeather", "网络OK");
-                queryWeatherCOde(cityCode);
+                queryWeatherCode(cityCode);
             } else {
                 Log.d("myWeather", "网络挂了");
                 Toast.makeText(MainActivity.this, "网络挂了!", Toast.LENGTH_LONG).show();
             }
         }
         if(view.getId()==R.id.title_city_manager){
+            Log.d("myWeather", "点选择城市");
             Intent i = new Intent(this,SelectCity.class);
             //startActivity(i);
             startActivityForResult(i,1);
@@ -262,7 +265,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
 
             if (NetUtil.getNetworkState(this) != NetUtil.NETWORN_NONE) {
                 Log.d("myWeather", "网络OK");
-                queryWeatherCOde(newCityCode);
+                queryWeatherCode(newCityCode);
             } else {
                 Log.d("myWeather", "网络挂了");
                 Toast.makeText(MainActivity.this, "网络挂了!", Toast.LENGTH_LONG).show();
@@ -272,7 +275,20 @@ public class MainActivity extends Activity implements View.OnClickListener {
 
     void updateTodayWeather(TodayWeather todayWeather){
         String pm = todayWeather.getPm25();
-        double pmInt = Double.parseDouble(pm);
+        double pmInt;
+        if(pm==null){
+            pmInt = 0;
+            pm = "0";
+        }else{
+            pmInt = Double.parseDouble(pm);
+        }
+        String quality = todayWeather.getQuality();
+        if(quality == null){
+            pmQualityTv.setText("无");
+        }else{
+            pmQualityTv.setText(todayWeather.getQuality());
+        }
+
         String climate = todayWeather.getType();
         city_name_Tv.setText(todayWeather.getCity()+"天气");
         cityTv.setText(todayWeather.getCity());
@@ -280,7 +296,6 @@ public class MainActivity extends Activity implements View.OnClickListener {
         humidityTv.setText("湿度："+todayWeather.getShidu());
         weekTv.setText(todayWeather.getDate());
         pmDataTv.setText(pm);
-        pmQualityTv.setText(todayWeather.getQuality());
         temperatureTv.setText(todayWeather.getHigh()+"~"+todayWeather.getLow());
         climateTv.setText(climate);
         nowTemperatureTv.setText("温度："+todayWeather.getWendu()+"℃");
