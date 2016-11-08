@@ -1,6 +1,7 @@
 package com.example.neferpitou.app;
 
 import android.app.Application;
+import android.content.Context;
 import android.os.Environment;
 import android.util.Log;
 
@@ -64,13 +65,15 @@ public class MyApplication extends Application{
     }
 
     private CityDB openCityDB(){
+        //打开数据库
         String path ="/data"
-                + Environment.getDataDirectory().getAbsolutePath()
-                + File.separator+getPackageName()
+                + Environment.getDataDirectory().getAbsolutePath()        //内容为/data
+                + File.separator+getPackageName()                       //内容分别为/和com.example.neferpitou.myweather
                 + File.separator+"database1"
                 + CityDB.CITY_DB_NAME;
         File db = new File(path);
         Log.d(TAG,path);
+        //创建数据库
         if(!db.exists()){
             String pathfolder ="/data"
                     + Environment.getDataDirectory().getAbsolutePath()
@@ -94,7 +97,6 @@ public class MyApplication extends Application{
                 }
                 fos.close();
                 is.close();
-
             }catch (IOException e){
                 e.printStackTrace();
                 System.exit(0);

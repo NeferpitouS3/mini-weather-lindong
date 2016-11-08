@@ -7,9 +7,9 @@ public class City {
     private String province;
     private String city;
     private String number;
-    private String firstPY;
-    private String allPY;
-    private String allFirstPY;
+    private String allPY;           //所有的拼音             如：BEIJING
+    private String allFirstPY;     //所有拼音单词的首字母   如：BJ
+    private String firstPY;        //拼音的首字母           如：B
 
     public City(String province, String city, String number, String firstPY, String allPY, String allFirstPY) {
         this.province = province;

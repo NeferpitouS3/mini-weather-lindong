@@ -40,6 +40,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
     private TextView cityTv,timeTv,humidityTv,weekTv,pmDataTv,pmQualityTv,temperatureTv,climateTv,windTv,city_name_Tv,nowTemperatureTv;
     private ImageView weatherImg,pmImg;
     private static final int UPDATE_TODAY_WEATHER = 1;
+    String newCityCode;
 
     private Handler mHandler = new Handler(){
         public void handleMessage(Message msg){
@@ -188,7 +189,6 @@ public class MainActivity extends Activity implements View.OnClickListener {
     /**
      * @param cityCode
      */
-
     private void queryWeatherCode(String cityCode) {
         final String address = "http://wthrcdn.etouch.cn/WeatherApi?citykey=" + cityCode;
         Log.d("myWeather", address);
@@ -239,7 +239,13 @@ public class MainActivity extends Activity implements View.OnClickListener {
         if (view.getId() == R.id.title_update_btn) {
             Log.d("myWeather", "点刷新");
             SharedPreferences sharedPreferences = getSharedPreferences("config", MODE_PRIVATE);
-            String cityCode = sharedPreferences.getString("main_city_code", "101210101");       //此北京 101010100，兰州 101160101 苍南101210709
+            String cityCode = sharedPreferences.getString("main_city_code","101210709");  //此北京 101010100，兰州 101160101 苍南101210709
+//            SharedPreferences.Editor editor = sharedPreferences.edit();
+//            editor.clear().commit();    //把SharedPreferences保存的数据清空了。
+            //这段是我自己新加的功能
+            if(newCityCode!=null){
+                cityCode = newCityCode;
+            }
             Log.d("myWeather", cityCode);
 
             if (NetUtil.getNetworkState(this) != NetUtil.NETWORN_NONE) {
@@ -252,24 +258,31 @@ public class MainActivity extends Activity implements View.OnClickListener {
         }
         if(view.getId()==R.id.title_city_manager){
             Log.d("myWeather", "点选择城市");
-            Intent i = new Intent(this,SelectCity.class);
-            //startActivity(i);
-            startActivityForResult(i,1);
+            Intent i = new Intent(MainActivity.this,SelectCity.class);
+//            startActivity(i);
+
+            startActivityForResult(i,1);  // (Intent intent,int requestCode)
         }
     }
 
     protected void onActivityResult(int requestCode ,int resultCode , Intent data){
-        if(requestCode==1 && resultCode==RESULT_OK){
-            String newCityCode = data.getStringExtra("cityCode");
-            Log.d("myWeather","选择的城市代码为"+newCityCode);
+        switch (requestCode){
+            case 1:
+                if(resultCode==RESULT_OK){
+                    newCityCode = data.getStringExtra("cityCode");
+                    Log.d("myWeather","选择的城市代码为"+newCityCode);
 
-            if (NetUtil.getNetworkState(this) != NetUtil.NETWORN_NONE) {
-                Log.d("myWeather", "网络OK");
-                queryWeatherCode(newCityCode);
-            } else {
-                Log.d("myWeather", "网络挂了");
-                Toast.makeText(MainActivity.this, "网络挂了!", Toast.LENGTH_LONG).show();
-            }
+                    if (NetUtil.getNetworkState(this) != NetUtil.NETWORN_NONE) {
+                        Log.d("myWeather", "网络OK");
+                        queryWeatherCode(newCityCode);
+                    } else {
+                        Log.d("myWeather", "网络挂了");
+                        Toast.makeText(MainActivity.this, "网络挂了!", Toast.LENGTH_LONG).show();
+                    }
+                }
+                break;
+            default:
+                break;
         }
     }
 

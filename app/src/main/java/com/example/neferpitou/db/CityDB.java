@@ -23,8 +23,10 @@ public class CityDB {
 
     public List<City> getAllCity(){
         List<City> list = new ArrayList<City>();
+        //Cursor 是每行数据的集合。
         Cursor c = db.rawQuery("SELECT * from "+CITY_TABLE_NAME , null);
         while(c.moveToNext()){
+            //getColumnIndex(string name)根据name返回列索引    getString(int index)根据列索引以字符串形式返回该位置的值
             String province = c.getString(c.getColumnIndex("province"));
             String city = c.getString(c.getColumnIndex("city"));
             String number = c.getString(c.getColumnIndex("number"));
