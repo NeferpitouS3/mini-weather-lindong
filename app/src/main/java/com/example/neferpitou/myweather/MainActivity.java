@@ -40,13 +40,16 @@ public class MainActivity extends Activity implements View.OnClickListener {
     private TextView cityTv,timeTv,humidityTv,weekTv,pmDataTv,pmQualityTv,temperatureTv,climateTv,windTv,city_name_Tv,nowTemperatureTv;
     private ImageView weatherImg,pmImg;
     private static final int UPDATE_TODAY_WEATHER = 1;
-    String newCityCode;
+    String newCityCode;         //用来保证每次刷新都是当前的城市
+    String cityName ="北京";            //用户修改SelectCity里标题的名字。
+//    String cityCodeToSelectCity = "101010100";
 
     private Handler mHandler = new Handler(){
         public void handleMessage(Message msg){
             switch (msg.what){
                 case UPDATE_TODAY_WEATHER:
                     updateTodayWeather((TodayWeather)msg.obj);
+                    cityName = ((TodayWeather) msg.obj).getCity();
                     break;
                 default:
                     break;
@@ -239,7 +242,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
         if (view.getId() == R.id.title_update_btn) {
             Log.d("myWeather", "点刷新");
             SharedPreferences sharedPreferences = getSharedPreferences("config", MODE_PRIVATE);
-            String cityCode = sharedPreferences.getString("main_city_code","101210709");  //此北京 101010100，兰州 101160101 苍南101210709
+            String cityCode = sharedPreferences.getString("main_city_code","101010100");  //此北京 101010100，兰州 101160101 苍南101210709
 //            SharedPreferences.Editor editor = sharedPreferences.edit();
 //            editor.clear().commit();    //把SharedPreferences保存的数据清空了。
             //这段是我自己新加的功能
@@ -260,6 +263,8 @@ public class MainActivity extends Activity implements View.OnClickListener {
             Log.d("myWeather", "点选择城市");
             Intent i = new Intent(MainActivity.this,SelectCity.class);
 //            startActivity(i);
+            i.putExtra("city",cityName);
+//            i.putExtra("CityCode",cityCodeToSelectCity);
 
             startActivityForResult(i,1);  // (Intent intent,int requestCode)
         }
@@ -270,6 +275,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
             case 1:
                 if(resultCode==RESULT_OK){
                     newCityCode = data.getStringExtra("cityCode");
+//                    cityCodeToSelectCity = newCityCode;
                     Log.d("myWeather","选择的城市代码为"+newCityCode);
 
                     if (NetUtil.getNetworkState(this) != NetUtil.NETWORN_NONE) {

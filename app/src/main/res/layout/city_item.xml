@@ -5,22 +5,41 @@
     android:layout_height="match_parent">
 
     <TextView
-        android:text="TextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:text="H"
+        android:layout_width="match_parent"
+        android:layout_height="35dp"
+        android:background="#F0F0F0"
+        android:gravity="center_vertical"
+        android:textColor="@android:color/black"
+        android:paddingLeft="10sp"
+        android:textSize="18sp"
         android:id="@+id/item_firstname" />
 
-    <LinearLayout
+    <RelativeLayout
         android:orientation="vertical"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
         <TextView
-            android:text="TextView"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="10sp"
-            android:textSize="20sp"
+            android:layout_height="42dp"
+            android:gravity="center_vertical"
+            android:paddingLeft="10sp"
+            android:text="杭州"
+            android:textColor="@android:color/black"
+            android:textSize="15sp"
+            android:layout_alignParentLeft="true"
             android:id="@+id/item_name" />
-    </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="42dp"
+            android:gravity="center_vertical"
+            android:paddingRight="10sp"
+            android:text="浙江"
+            android:textColor="@android:color/black"
+            android:textSize="15sp"
+            android:layout_alignParentRight="true"
+            android:id="@+id/item_province" />
+    </RelativeLayout>
 </LinearLayout>
