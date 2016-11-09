@@ -27,7 +27,7 @@ public class CityAdapter extends BaseAdapter implements SectionIndexer {
         this.mContext = mContext;
     }
 
-    public void updataListView(List<City> cityList){
+    public void updateListView(List<City> cityList){
         this.cityList = cityList;
         notifyDataSetChanged();
     }

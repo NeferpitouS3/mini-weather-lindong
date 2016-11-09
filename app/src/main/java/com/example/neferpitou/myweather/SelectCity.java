@@ -3,8 +3,12 @@ package com.example.neferpitou.myweather;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextUtils;
+import android.text.TextWatcher;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -14,6 +18,7 @@ import com.example.neferpitou.bean.City;
 import com.example.neferpitou.list.FirstPYComparator;
 import com.example.neferpitou.list.CityAdapter;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -26,6 +31,7 @@ public class SelectCity extends Activity implements View.OnClickListener{
     private List<City> cityList;
     private ListView listView;
     private FirstPYComparator pinyinComparator;
+    private EditText mEditText;
     private CityAdapter adapter;
 //    String cityCodeFromMain;
 
@@ -43,6 +49,25 @@ public class SelectCity extends Activity implements View.OnClickListener{
 
         mBackBtn = (ImageView)findViewById(R.id.title_back);
         mBackBtn.setOnClickListener(this);
+
+        mEditText =(EditText)findViewById(R.id.search_city);
+        mEditText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                //当输入框里面的值为空，更新为原来的列表，否则为过滤数据列表
+                filterData(s.toString());
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+
+            }
+        });
     }
 
     @Override
@@ -58,6 +83,26 @@ public class SelectCity extends Activity implements View.OnClickListener{
             default:
                 break;
         }
+    }
+
+    private void filterData(String filterStr) {
+        List<City> mFilterList = new ArrayList<City>();
+        if (TextUtils.isEmpty(filterStr)) {
+            mFilterList = cityList;
+        } else {
+            mFilterList.clear();
+            for (City city : cityList) {
+                String name = city.getCity();
+                String pinyin = city.getAllPY().toUpperCase();
+                String allFirstPY = city.getAllFirstPY().toUpperCase();
+                if (name.indexOf(filterStr) != -1 || pinyin.indexOf(filterStr.toUpperCase())!=-1 ||allFirstPY.indexOf(filterStr.toUpperCase())!=-1) {
+                    mFilterList.add(city);
+                }
+            }
+        }
+        // 根据a-z进行排序
+        Collections.sort(mFilterList, new FirstPYComparator());
+        adapter.updateListView(mFilterList);
     }
 
     private void initViews() {
