@@ -102,6 +102,7 @@ public class SelectCity extends Activity implements View.OnClickListener{
         }
         // 根据a-z进行排序
         Collections.sort(mFilterList, new FirstPYComparator());
+        cityList = mFilterList;
         adapter.updateListView(mFilterList);
     }
 

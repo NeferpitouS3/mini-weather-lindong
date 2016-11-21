@@ -22,6 +22,10 @@
 
         </activity>
 
+        <service android:name="com.example.neferpitou.service.MyService" >
+
+        </service>
+
     </application>
 
 </manifest>

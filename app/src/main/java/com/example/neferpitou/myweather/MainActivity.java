@@ -2,11 +2,17 @@ package com.example.neferpitou.myweather;
 
 import android.app.Activity;
 import android.app.Notification;
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.location.Address;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
 import android.os.Message;
 import android.provider.Telephony;
 import android.util.Log;
@@ -16,6 +22,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.neferpitou.bean.TodayWeather;
+import com.example.neferpitou.service.MyService;
 import com.example.neferpitou.util.NetUtil;
 
 import org.xmlpull.v1.XmlPullParser;
@@ -40,9 +47,59 @@ public class MainActivity extends Activity implements View.OnClickListener {
     private TextView cityTv,timeTv,humidityTv,weekTv,pmDataTv,pmQualityTv,temperatureTv,climateTv,windTv,city_name_Tv,nowTemperatureTv;
     private ImageView weatherImg,pmImg;
     private static final int UPDATE_TODAY_WEATHER = 1;
-    String newCityCode;         //用来保证每次刷新都是当前的城市
+    String newCityCode="101010100";         //用来保证每次刷新都是当前的城市
     String cityName ="北京";            //用户修改SelectCity里标题的名字。
 //    String cityCodeToSelectCity = "101010100";
+
+    Intent serviceIntent;
+//    MyService serviceBinder;
+    IntentFilter intentFilter;
+
+
+//    private ServiceConnection connection = new ServiceConnection() {
+//
+//        @Override
+//        public void onServiceConnected(ComponentName name, IBinder service) {
+//            serviceBinder = ((MyService.MyBinder)service).getService();
+//            startService(serviceIntent);
+//        }
+//
+//        @Override
+//        public void onServiceDisconnected(ComponentName name) {
+//
+//        }
+//    };
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        intentFilter = new IntentFilter();
+        intentFilter.addAction("UPDATE_NOW");
+
+        registerReceiver(intentReceiver,intentFilter);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        unregisterReceiver(intentReceiver);
+    }
+
+    @Override
+    protected void onDestroy() {
+        stopService(serviceIntent);
+        super.onDestroy();
+    }
+
+    private BroadcastReceiver intentReceiver = new BroadcastReceiver() {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            queryWeatherCode(newCityCode);
+        }
+    };
+
+
 
     private Handler mHandler = new Handler(){
         public void handleMessage(Message msg){
@@ -76,6 +133,10 @@ public class MainActivity extends Activity implements View.OnClickListener {
         mCitySelect.setOnClickListener(this);
 
         initView();
+
+        serviceIntent = new Intent(this,MyService.class);
+        startService(serviceIntent);
+//        bindService(serviceIntent,connection, Context.BIND_AUTO_CREATE);
     }
 
     void initView(){
@@ -206,7 +267,9 @@ public class MainActivity extends Activity implements View.OnClickListener {
                     con.setRequestMethod("GET");
                     con.setConnectTimeout(8000);    //设置连接超时毫秒
                     con.setReadTimeout(8000);       //设置读取超时毫秒
+
                     InputStream in = con.getInputStream();       //得到网络返回的输入流
+
                     BufferedReader reader = new BufferedReader(new InputStreamReader(in));
                     StringBuilder response = new StringBuilder();
                     String str;
