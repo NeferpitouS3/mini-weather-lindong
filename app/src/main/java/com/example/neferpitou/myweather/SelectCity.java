@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.EditText;
@@ -61,6 +62,7 @@ public class SelectCity extends Activity implements View.OnClickListener{
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 //当输入框里面的值为空，更新为原来的列表，否则为过滤数据列表
                 filterData(s.toString());
+
             }
 
             @Override
@@ -87,6 +89,7 @@ public class SelectCity extends Activity implements View.OnClickListener{
 
     private void filterData(String filterStr) {
         List<City> mFilterList = new ArrayList<City>();
+        //TextUtils.isEmpty用来检验null和 "" 。
         if (TextUtils.isEmpty(filterStr)) {
             mFilterList = cityList;
         } else {
@@ -95,14 +98,13 @@ public class SelectCity extends Activity implements View.OnClickListener{
                 String name = city.getCity();
                 String pinyin = city.getAllPY().toUpperCase();
                 String allFirstPY = city.getAllFirstPY().toUpperCase();
-                if (name.indexOf(filterStr) != -1 || pinyin.indexOf(filterStr.toUpperCase())!=-1 ||allFirstPY.indexOf(filterStr.toUpperCase())!=-1) {
+                if (name.indexOf(filterStr) != -1 || pinyin.indexOf(filterStr.toUpperCase()) == 0 ||allFirstPY.indexOf(filterStr.toUpperCase()) == 0) {
                     mFilterList.add(city);
                 }
             }
         }
         // 根据a-z进行排序
         Collections.sort(mFilterList, new FirstPYComparator());
-        cityList = mFilterList;
         adapter.updateListView(mFilterList);
     }
 

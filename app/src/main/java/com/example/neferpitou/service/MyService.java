@@ -34,7 +34,12 @@ public class MyService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
 
-        repeatedUpdate();
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                repeatedUpdate();
+            }
+        }).start();
 
         return super.onStartCommand(intent, flags, startId);
     }
@@ -48,8 +53,13 @@ public class MyService extends Service {
                 broadcastIntent.setAction("UPDATE_NOW");
                 getBaseContext().sendBroadcast(broadcastIntent);
             }
-        },0,10000);
+        },0,60000);
     }
 
+    @Override
+    public void onDestroy() {
+        timer.cancel();
+        super.onDestroy();
 
+    }
 }

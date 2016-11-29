@@ -1,29 +1,30 @@
 package com.example.neferpitou.myweather;
 
 import android.app.Activity;
-import android.app.Notification;
 import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.ServiceConnection;
 import android.content.SharedPreferences;
-import android.location.Address;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.IBinder;
 import android.os.Message;
-import android.provider.Telephony;
+import android.support.v4.view.ViewPager;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
+import android.view.animation.LinearInterpolator;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.neferpitou.bean.TodayWeather;
 import com.example.neferpitou.service.MyService;
 import com.example.neferpitou.util.NetUtil;
+import com.example.neferpitou.viewpager.ViewPagerAdapter;
 
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
@@ -36,20 +37,46 @@ import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by Neferpitou on 2016/9/20.
  */
-public class MainActivity extends Activity implements View.OnClickListener {
+public class MainActivity extends Activity implements View.OnClickListener,ViewPager.OnPageChangeListener{
     private ImageView mUpdataBtn;
     private ImageView mCitySelect;
+    private ProgressBar mProgressBar;
+    private Animation animation;
 
     private TextView cityTv,timeTv,humidityTv,weekTv,pmDataTv,pmQualityTv,temperatureTv,climateTv,windTv,city_name_Tv,nowTemperatureTv;
     private ImageView weatherImg,pmImg;
+
+    private TextView yesterday_dateTv,yesterday_temperatureTv,yesterday_typeTv,yesterday_fengliTv;
+    private TextView today_dateTv,today_temperatureTv,today_typeTv,today_fengliTv;
+    private TextView future_date1Tv,future_temperature1Tv,future_type1Tv,future_fengli1Tv;
+    private TextView future_date2Tv,future_temperature2Tv,future_type2Tv,future_fengli2Tv;
+    private TextView future_date3Tv,future_temperature3Tv,future_type3Tv,future_fengli3Tv;
+    private TextView future_date4Tv,future_temperature4Tv,future_type4Tv,future_fengli4Tv;
+    private ImageView yesterday_imgTv,today_imgTv,future_img1Tv,future_img2Tv,future_img3Tv,future_img4Tv;
+
     private static final int UPDATE_TODAY_WEATHER = 1;
     String newCityCode="101010100";         //用来保证每次刷新都是当前的城市
     String cityName ="北京";            //用户修改SelectCity里标题的名字。
 //    String cityCodeToSelectCity = "101010100";
+
+    private ViewPagerAdapter viewPagerAdapter;
+    private ViewPager viewPager;
+    private List<View> views;
+    private ImageView[] dots;
+    private int[] ids={R.id.iv1,R.id.iv2};
+
+
+
+
+
+
+
 
     Intent serviceIntent;
 //    MyService serviceBinder;
@@ -119,12 +146,16 @@ public class MainActivity extends Activity implements View.OnClickListener {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.weather_info);
         Log.d("myWeather", "程序开始");
+        mProgressBar = (ProgressBar)findViewById(R.id.title_update_progress);
+        animation = AnimationUtils.loadAnimation(this, R.anim.rotate_update);
+        LinearInterpolator linearInterpolator = new LinearInterpolator();    //设置动画匀速运动
+        animation.setInterpolator(linearInterpolator);
 
         mUpdataBtn = (ImageView) findViewById(R.id.title_update_btn);
         mUpdataBtn.setOnClickListener(this);    //在该类里实现了点击接口（下面的onClick方法）
         if (NetUtil.getNetworkState(this) != NetUtil.NETWORN_NONE) {
             Log.d("myWeather", "网络OK");         //在logcat输出debug
-            Toast.makeText(MainActivity.this, "网络OK!", Toast.LENGTH_LONG).show();
+//            Toast.makeText(MainActivity.this, "网络OK!", Toast.LENGTH_LONG).show();
         } else if(NetUtil.getNetworkState(this) == NetUtil.NETWORN_NONE){
             Log.d("myWeather", "网络挂了");
             Toast.makeText(MainActivity.this, "网络挂了!", Toast.LENGTH_LONG).show();
@@ -132,12 +163,22 @@ public class MainActivity extends Activity implements View.OnClickListener {
         mCitySelect = (ImageView)findViewById(R.id.title_city_manager);
         mCitySelect.setOnClickListener(this);
 
+        initPagers();
+        initDots();
+
         initView();
+
+
+
+
+
 
         serviceIntent = new Intent(this,MyService.class);
         startService(serviceIntent);
 //        bindService(serviceIntent,connection, Context.BIND_AUTO_CREATE);
     }
+
+
 
     void initView(){
         city_name_Tv = (TextView) findViewById(R.id.title_city_name);
@@ -164,6 +205,96 @@ public class MainActivity extends Activity implements View.OnClickListener {
         climateTv.setText("N/A");
         windTv.setText("N/A");
         nowTemperatureTv.setText("N/A");
+        //viewpage里的昨天天气
+        yesterday_dateTv = (TextView)views.get(0).findViewById(R.id.yesterday_date);
+        yesterday_temperatureTv = (TextView)views.get(0).findViewById(R.id.yesterday_temperature);
+        yesterday_typeTv = (TextView)views.get(0).findViewById(R.id.yesterday_type);
+        yesterday_fengliTv = (TextView)views.get(0).findViewById(R.id.yesterday_fengli);
+        yesterday_imgTv = (ImageView)views.get(0).findViewById(R.id.yesterday_img);
+        //viewpage里的今天天气
+        today_dateTv = (TextView)views.get(0).findViewById(R.id.today_date);
+        today_temperatureTv = (TextView)views.get(0).findViewById(R.id.today_temperature);
+        today_typeTv = (TextView)views.get(0).findViewById(R.id.today_type);
+        today_fengliTv = (TextView)views.get(0).findViewById(R.id.today_fengli);
+        today_imgTv = (ImageView)views.get(0).findViewById(R.id.today_img);
+        //viewpage里的明天天气
+        future_date1Tv = (TextView)views.get(0).findViewById(R.id.future_date1);
+        future_temperature1Tv = (TextView)views.get(0).findViewById(R.id.future_temperature1);
+        future_type1Tv = (TextView)views.get(0).findViewById(R.id.future_type1);
+        future_fengli1Tv = (TextView)views.get(0).findViewById(R.id.future_fengli1);
+        future_img1Tv = (ImageView)views.get(0).findViewById(R.id.future_img1);
+        //viewpage里的后天天气
+        future_date2Tv = (TextView)views.get(1).findViewById(R.id.future_date2);
+        future_temperature2Tv = (TextView)views.get(1).findViewById(R.id.future_temperature2);
+        future_type2Tv = (TextView)views.get(1).findViewById(R.id.future_type2);
+        future_fengli2Tv = (TextView)views.get(1).findViewById(R.id.future_fengli2);
+        future_img2Tv = (ImageView)views.get(1).findViewById(R.id.future_img2);
+        //viewpage里的大后天天气
+        future_date3Tv = (TextView)views.get(1).findViewById(R.id.future_date3);
+        future_temperature3Tv = (TextView)views.get(1).findViewById(R.id.future_temperature3);
+        future_type3Tv = (TextView)views.get(1).findViewById(R.id.future_type3);
+        future_fengli3Tv = (TextView)views.get(1).findViewById(R.id.future_fengli3);
+        future_img3Tv = (ImageView)views.get(1).findViewById(R.id.future_img3);
+        //viewpage里的大大后台天气
+        future_date4Tv = (TextView)views.get(1).findViewById(R.id.future_date4);
+        future_temperature4Tv = (TextView)views.get(1).findViewById(R.id.future_temperature4);
+        future_type4Tv = (TextView)views.get(1).findViewById(R.id.future_type4);
+        future_fengli4Tv = (TextView)views.get(1).findViewById(R.id.future_fengli4);
+        future_img4Tv = (ImageView)views.get(1).findViewById(R.id.future_img4);
+
+
+
+
+
+
+
+
+
+
+
+
+    }
+
+    void initDots(){
+        dots = new ImageView[views.size()];
+        for(int i=0;i<views.size();i++){
+            dots[i] = (ImageView)findViewById(ids[i]);
+        }
+    }
+
+    private void initPagers(){
+        LayoutInflater inflater = LayoutInflater.from(this);
+        views = new ArrayList<View>();
+        views.add(inflater.inflate(R.layout.forecast_info1,null));
+        views.add(inflater.inflate(R.layout.forecast_info2,null));
+        viewPagerAdapter = new ViewPagerAdapter(views,this);
+        viewPager = (ViewPager)findViewById(R.id.viewpager);
+        viewPager.setAdapter(viewPagerAdapter);
+
+
+        viewPager.addOnPageChangeListener(this);
+
+    }
+
+    @Override
+    public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+
+    }
+
+    @Override
+    public void onPageSelected(int position) {
+        for(int a=0;a<ids.length;a++){
+            if(a == position){
+                dots[a].setImageResource(R.drawable.page_indicator_focused);
+            }else{
+                dots[a].setImageResource(R.drawable.page_indicator_unfocused);
+            }
+        }
+    }
+
+    @Override
+    public void onPageScrollStateChanged(int state) {
+
     }
 
 
@@ -176,6 +307,20 @@ public class MainActivity extends Activity implements View.OnClickListener {
         int highCount = 0;
         int lowCount = 0;
         int typeCount = 0;
+
+        int yesterdayTypeCount = 0;
+        int yesterdayFengliCount = 0;
+
+        int future1TypeCount = 0;
+        int future1FengliCount = 0;
+        int future2TypeCount = 0;
+        int future2FengliCount = 0;
+        int future3TypeCount = 0;
+        int future3FengliCount = 0;
+        int future4TypeCount = 0;
+        int future4FengliCount = 0;
+
+        int forecastTimes = 0;
         try {
             XmlPullParserFactory fac = XmlPullParserFactory.newInstance();
             XmlPullParser xmlPullParser = fac.newPullParser();
@@ -232,10 +377,118 @@ public class MainActivity extends Activity implements View.OnClickListener {
                                 todayWeather.setType(xmlPullParser.getText());
                                 typeCount++;
                             }
+                            //接下来获取的是viewpage内的最近6天的数据（从昨天到未来第四天,今天的内容上面已经解析）
+                            //昨天
+                            else if(xmlPullParser.getName().equals("date_1")) {
+                                eventType = xmlPullParser.next();
+                                todayWeather.setYesterdayDate(xmlPullParser.getText());
+                            }else if(xmlPullParser.getName().equals("high_1")) {
+                                eventType = xmlPullParser.next();
+                                todayWeather.setYesterdayHigh(xmlPullParser.getText());
+                            }else if(xmlPullParser.getName().equals("low_1")) {
+                                eventType = xmlPullParser.next();
+                                todayWeather.setYesterdayLow(xmlPullParser.getText());
+                            }else if(xmlPullParser.getName().equals("type_1") && yesterdayTypeCount == 0) {
+                                eventType = xmlPullParser.next();
+                                todayWeather.setYesterdayType(xmlPullParser.getText());
+                                yesterdayTypeCount++;
+                            }else if(xmlPullParser.getName().equals("fl_1") && yesterdayFengliCount == 0){
+                                eventType = xmlPullParser.next();
+                                todayWeather.setYesterdayFengli(xmlPullParser.getText());
+                                yesterdayFengliCount++;
+                            }
+                            //明天
+                            else if(forecastTimes == 1){
+                                if(xmlPullParser.getName().equals("date")){
+                                    eventType = xmlPullParser.next();
+                                    todayWeather.setFutureDate1(xmlPullParser.getText());
+                                }else if(xmlPullParser.getName().equals("high")){
+                                    eventType = xmlPullParser.next();
+                                    todayWeather.setFutureHigh1(xmlPullParser.getText());
+                                }else if(xmlPullParser.getName().equals("low")){
+                                    eventType = xmlPullParser.next();
+                                    todayWeather.setFutureLow1(xmlPullParser.getText());
+                                }else if(xmlPullParser.getName().equals("type") && future1TypeCount ==0){
+                                    eventType = xmlPullParser.next();
+                                    todayWeather.setFutureType1(xmlPullParser.getText());
+                                    future1TypeCount++;
+                                }else if(xmlPullParser.getName().equals("fengli") && future1FengliCount==0){
+                                    eventType = xmlPullParser.next();
+                                    todayWeather.setFutureFengli1(xmlPullParser.getText());
+                                    future1FengliCount++;
+                                }
+                            }
+                            //后天
+                            else if(forecastTimes == 2){
+                                if(xmlPullParser.getName().equals("date")){
+                                    eventType = xmlPullParser.next();
+                                    todayWeather.setFutureDate2(xmlPullParser.getText());
+                                }else if(xmlPullParser.getName().equals("high")){
+                                    eventType = xmlPullParser.next();
+                                    todayWeather.setFutureHigh2(xmlPullParser.getText());
+                                }else if(xmlPullParser.getName().equals("low")){
+                                    eventType = xmlPullParser.next();
+                                    todayWeather.setFutureLow2(xmlPullParser.getText());
+                                }else if(xmlPullParser.getName().equals("type") && future2TypeCount ==0){
+                                    eventType = xmlPullParser.next();
+                                    todayWeather.setFutureType2(xmlPullParser.getText());
+                                    future2TypeCount++;
+                                }else if(xmlPullParser.getName().equals("fengli") && future2FengliCount==0){
+                                    eventType = xmlPullParser.next();
+                                    todayWeather.setFutureFengli2(xmlPullParser.getText());
+                                    future2FengliCount++;
+                                }
+                            }
+                            //大后天
+                            else if(forecastTimes == 3){
+                                if(xmlPullParser.getName().equals("date")){
+                                    eventType = xmlPullParser.next();
+                                    todayWeather.setFutureDate3(xmlPullParser.getText());
+                                }else if(xmlPullParser.getName().equals("high")){
+                                    eventType = xmlPullParser.next();
+                                    todayWeather.setFutureHigh3(xmlPullParser.getText());
+                                }else if(xmlPullParser.getName().equals("low")){
+                                    eventType = xmlPullParser.next();
+                                    todayWeather.setFutureLow3(xmlPullParser.getText());
+                                }else if(xmlPullParser.getName().equals("type") && future3TypeCount ==0){
+                                    eventType = xmlPullParser.next();
+                                    todayWeather.setFutureType3(xmlPullParser.getText());
+                                    future3TypeCount++;
+                                }else if(xmlPullParser.getName().equals("fengli") && future3FengliCount==0){
+                                    eventType = xmlPullParser.next();
+                                    todayWeather.setFutureFengli3(xmlPullParser.getText());
+                                    future3FengliCount++;
+                                }
+                            }
+                            //大大后天
+                            else if(forecastTimes == 4){
+                                if(xmlPullParser.getName().equals("date")){
+                                    eventType = xmlPullParser.next();
+                                    todayWeather.setFutureDate4(xmlPullParser.getText());
+                                }else if(xmlPullParser.getName().equals("high")){
+                                    eventType = xmlPullParser.next();
+                                    todayWeather.setFutureHigh4(xmlPullParser.getText());
+                                }else if(xmlPullParser.getName().equals("low")){
+                                    eventType = xmlPullParser.next();
+                                    todayWeather.setFutureLow4(xmlPullParser.getText());
+                                }else if(xmlPullParser.getName().equals("type") && future4TypeCount ==0){
+                                    eventType = xmlPullParser.next();
+                                    todayWeather.setFutureType4(xmlPullParser.getText());
+                                    future4TypeCount++;
+                                }else if(xmlPullParser.getName().equals("fengli") && future4FengliCount==0){
+                                    eventType = xmlPullParser.next();
+                                    todayWeather.setFutureFengli4(xmlPullParser.getText());
+                                    future4FengliCount++;
+                                }
+                            }
+
                         }
                         break;
 
                     case XmlPullParser.END_TAG:
+                        if(xmlPullParser.getName().equals("weather")){
+                            forecastTimes++;
+                        }
                         break;
                     default:
                         break;
@@ -303,6 +556,10 @@ public class MainActivity extends Activity implements View.OnClickListener {
     @Override
     public void onClick(View view) {
         if (view.getId() == R.id.title_update_btn) {
+
+            mUpdataBtn.setVisibility(View.INVISIBLE);
+            mProgressBar.startAnimation(animation);
+
             Log.d("myWeather", "点刷新");
             SharedPreferences sharedPreferences = getSharedPreferences("config", MODE_PRIVATE);
             String cityCode = sharedPreferences.getString("main_city_code","101010100");  //此北京 101010100，兰州 101160101 苍南101210709
@@ -337,6 +594,8 @@ public class MainActivity extends Activity implements View.OnClickListener {
         switch (requestCode){
             case 1:
                 if(resultCode==RESULT_OK){
+                    mUpdataBtn.setVisibility(View.INVISIBLE);
+                    mProgressBar.startAnimation(animation);
                     newCityCode = data.getStringExtra("cityCode");
 //                    cityCodeToSelectCity = newCityCode;
                     Log.d("myWeather","选择的城市代码为"+newCityCode);
@@ -437,5 +696,111 @@ public class MainActivity extends Activity implements View.OnClickListener {
         }else if(climate.equals("中雨")) {
             weatherImg.setImageResource(R.drawable.biz_plugin_weather_zhongyu);
         }
+
+        yesterday_dateTv.setText(todayWeather.getYesterdayDate().substring(todayWeather.getYesterdayDate().indexOf('日')+1));
+        yesterday_temperatureTv.setText(todayWeather.getYesterdayLow().substring(3)+"~"+todayWeather.getYesterdayHigh().substring(3));
+        yesterday_typeTv.setText(todayWeather.getYesterdayType());
+        yesterday_fengliTv.setText(todayWeather.getYesterdayFengli());
+
+        today_dateTv.setText(todayWeather.getDate().substring(todayWeather.getDate().indexOf('日')+1));
+        today_temperatureTv.setText(todayWeather.getLow().substring(3)+"~"+todayWeather.getHigh().substring(3));
+        today_typeTv.setText(todayWeather.getType());
+        today_fengliTv.setText(todayWeather.getFengli());
+
+        future_date1Tv.setText(todayWeather.getFutureDate1().substring(todayWeather.getFutureDate1().indexOf('日')+1));
+        future_temperature1Tv.setText(todayWeather.getFutureLow1().substring(3)+"~"+todayWeather.getFutureHigh1().substring(3));
+        future_type1Tv.setText(todayWeather.getFutureType1());
+        future_fengli1Tv.setText(todayWeather.getFutureFengli1());
+
+        future_date2Tv.setText(todayWeather.getFutureDate2().substring(todayWeather.getFutureDate2().indexOf('日')+1));
+        future_temperature2Tv.setText(todayWeather.getFutureLow2().substring(3)+"~"+todayWeather.getFutureHigh2().substring(3));
+        future_type2Tv.setText(todayWeather.getFutureType2());
+        future_fengli2Tv.setText(todayWeather.getFutureFengli2());
+
+        future_date3Tv.setText(todayWeather.getFutureDate3().substring(todayWeather.getFutureDate3().indexOf('日')+1));
+        future_temperature3Tv.setText(todayWeather.getFutureLow3().substring(3)+"~"+todayWeather.getFutureHigh3().substring(3));
+        future_type3Tv.setText(todayWeather.getFutureType3());
+        future_fengli3Tv.setText(todayWeather.getFutureFengli3());
+
+        future_date4Tv.setText(todayWeather.getFutureDate4().substring(todayWeather.getFutureDate4().indexOf('日')+1));
+        future_temperature4Tv.setText(todayWeather.getFutureLow4().substring(3)+"~"+todayWeather.getFutureHigh4().substring(3));
+        future_type4Tv.setText(todayWeather.getFutureType4());
+        future_fengli4Tv.setText(todayWeather.getFutureFengli4());
+
+        String[] typeArr = {todayWeather.getYesterdayType(),todayWeather.getType(),todayWeather.getFutureType1(),todayWeather.getFutureType2(),
+                todayWeather.getFutureType3(),todayWeather.getFutureType4()};
+        ImageView[] imgArr = {yesterday_imgTv,today_imgTv,future_img1Tv,future_img2Tv,future_img3Tv,future_img4Tv};
+        for(int i=0;i<typeArr.length;i++){
+            String s = typeArr[i];
+            ImageView tv = imgArr[i];
+            switch (s){
+                case "晴":
+                    tv.setImageResource(R.drawable.biz_plugin_weather_qing1);
+                    break;
+                case "暴雪":
+                    tv.setImageResource(R.drawable.biz_plugin_weather_baoxue1);
+                    break;
+                case "大暴雪":
+                    tv.setImageResource(R.drawable.biz_plugin_weather_dabaoyu1);
+                    break;
+                case "大雪":
+                    tv.setImageResource(R.drawable.biz_plugin_weather_daxue1);
+                    break;
+                case "大雨":
+                    tv.setImageResource(R.drawable.biz_plugin_weather_dayu1);
+                    break;
+                case "多云":
+                    tv.setImageResource(R.drawable.biz_plugin_weather_duoyun1);
+                    break;
+                case "雷阵雨":
+                    tv.setImageResource(R.drawable.biz_plugin_weather_leizhenyu1);
+                    break;
+                case "雷阵雨冰雹":
+                    tv.setImageResource(R.drawable.biz_plugin_weather_leizhenyubingbao1);
+                    break;
+                case "沙尘暴":
+                    tv.setImageResource(R.drawable.biz_plugin_weather_shachenbao1);
+                    break;
+                case "特大暴雨":
+                    tv.setImageResource(R.drawable.biz_plugin_weather_tedabaoyu1);
+                    break;
+                case "雾":
+                    tv.setImageResource(R.drawable.biz_plugin_weather_wu1);
+                    break;
+                case "小雨":
+                    tv.setImageResource(R.drawable.biz_plugin_weather_xiaoyu1);
+                    break;
+                case "小雪":
+                    tv.setImageResource(R.drawable.biz_plugin_weather_xiaoxue1);
+                    break;
+                case "阴":
+                    tv.setImageResource(R.drawable.biz_plugin_weather_yin1);
+                    break;
+                case "雨夹雪":
+                    tv.setImageResource(R.drawable.biz_plugin_weather_yujiaxue1);
+                    break;
+                case "阵雪":
+                    tv.setImageResource(R.drawable.biz_plugin_weather_zhenxue1);
+                    break;
+                case "阵雨":
+                    tv.setImageResource(R.drawable.biz_plugin_weather_zhenyu1);
+                    break;
+                case "中雪":
+                    tv.setImageResource(R.drawable.biz_plugin_weather_zhongxue1);
+                    break;
+                case "中雨":
+                    tv.setImageResource(R.drawable.biz_plugin_weather_zhongyu1);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+
+
+
+
+        mProgressBar.clearAnimation();
+        mUpdataBtn.setVisibility(View.VISIBLE);
     }
 }
