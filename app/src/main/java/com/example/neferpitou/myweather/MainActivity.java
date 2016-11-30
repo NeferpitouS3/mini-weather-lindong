@@ -146,6 +146,18 @@ public class MainActivity extends Activity implements View.OnClickListener,ViewP
         super.onCreate(savedInstanceState);
         setContentView(R.layout.weather_info);
         Log.d("myWeather", "程序开始");
+
+        SharedPreferences sharedPreferences = getSharedPreferences("first", MODE_PRIVATE);
+//        SharedPreferences.Editor editor = sharedPreferences.edit();
+//        editor.clear().commit();
+        int count = sharedPreferences.getInt("Count",0);
+        if(count == 0){
+            Intent intent = new Intent(MainActivity.this,GuideActivity.class);
+            startActivity(intent);
+            finish();
+        }
+
+
         mProgressBar = (ProgressBar)findViewById(R.id.title_update_progress);
         animation = AnimationUtils.loadAnimation(this, R.anim.rotate_update);
         LinearInterpolator linearInterpolator = new LinearInterpolator();    //设置动画匀速运动

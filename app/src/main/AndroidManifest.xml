@@ -18,9 +18,9 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".SelectCity">
+        <activity android:name=".GuideActivity"></activity>
 
-        </activity>
+        <activity android:name=".SelectCity"></activity>
 
         <service android:name="com.example.neferpitou.service.MyService" >
 
