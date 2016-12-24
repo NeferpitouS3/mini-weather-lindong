@@ -22,7 +22,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.neferpitou.bean.TodayWeather;
-import com.example.neferpitou.location.MyLocationListener;
 import com.example.neferpitou.service.MyService;
 import com.example.neferpitou.util.NetUtil;
 import com.example.neferpitou.viewpager.ViewPagerAdapter;
@@ -85,32 +84,16 @@ public class MainActivity extends Activity implements View.OnClickListener,ViewP
     private ImageView[] dots;
     private int[] ids={R.id.iv1,R.id.iv2};
 
-
-
-
-
-
-
-
     Intent serviceIntent;
 //    MyService serviceBinder;
     IntentFilter intentFilter;
 
-
-
-
-
-    public LocationClient mLocationClient = null;
-    public BDLocationListener myListener = new MyLocationListener();
-
+    //友盟分享监听器
     private UMShareListener umShareListener = new UMShareListener() {
         @Override
         public void onResult(SHARE_MEDIA platform) {
-
             Toast.makeText(MainActivity.this, platform + " 分享成功啦", Toast.LENGTH_SHORT).show();
-
         }
-
         @Override
         public void onError(SHARE_MEDIA platform, Throwable t) {
             if(t!=null){
@@ -119,88 +102,47 @@ public class MainActivity extends Activity implements View.OnClickListener,ViewP
                 Toast.makeText(MainActivity.this,platform + " 分享失败啦", Toast.LENGTH_SHORT).show();
             }
         }
-
         @Override
         public void onCancel(SHARE_MEDIA platform) {
             Toast.makeText(MainActivity.this,platform + " 分享取消了", Toast.LENGTH_SHORT).show();
         }
     };
 
-    public void initFirst() {
 
-        mLocationClient = new LocationClient(getApplicationContext());     //声明LocationClient类
-        mLocationClient.registerLocationListener(new BDLocationListener() {
-            @Override
-            public void onReceiveLocation(BDLocation location) {
-                Log.d("why","???");
-                //Receive Location
+    //百度sdk定位
+    public LocationClient mLocationClient = null;
+
+    public BDLocationListener myListener = new BDLocationListener() {
+        @Override
+        public void onReceiveLocation(BDLocation location) {
+            Log.d("why",location.getLocType()+"");
+            if (null != location && location.getLocType() != BDLocation.TypeServerError) {
+
                 StringBuffer sb = new StringBuffer(256);
                 sb.append("time : ");
                 sb.append(location.getTime());
-                sb.append("\nerror code : ");
+                sb.append("\nlocType : ");// 定位类型
                 sb.append(location.getLocType());
-                sb.append("\nlatitude : ");
-                sb.append(location.getLatitude());
-                sb.append("\nlontitude : ");
-                sb.append(location.getLongitude());
-                sb.append("\nradius : ");
-                sb.append(location.getRadius());
-                Log.d("why",location.getLocType()+"");
-                if (location.getLocType() == BDLocation.TypeGpsLocation){// GPS定位结果
-                    sb.append("\nspeed : ");
-                    sb.append(location.getSpeed());// 单位：公里每小时
-                    sb.append("\nsatellite : ");
-                    sb.append(location.getSatelliteNumber());
-                    sb.append("\nheight : ");
-                    sb.append(location.getAltitude());// 单位：米
-                    sb.append("\ndirection : ");
-                    sb.append(location.getDirection());// 单位度
-                    sb.append("\naddr : ");
-                    sb.append(location.getAddrStr());
-                    sb.append("\ndescribe : ");
-                    sb.append("gps定位成功");
-
-                } else if (location.getLocType() == BDLocation.TypeNetWorkLocation){// 网络定位结果
-                    sb.append("\naddr : ");
-                    sb.append(location.getAddrStr());
-                    //运营商信息
-                    sb.append("\noperationers : ");
-                    sb.append(location.getOperators());
-                    sb.append("\ndescribe : ");
-                    sb.append("网络定位成功");
-                } else if (location.getLocType() == BDLocation.TypeOffLineLocation) {// 离线定位结果
-                    sb.append("\ndescribe : ");
-                    sb.append("离线定位成功，离线定位结果也是有效的");
-                } else if (location.getLocType() == BDLocation.TypeServerError) {
-                    sb.append("\ndescribe : ");
-                    sb.append("服务端网络定位失败，可以反馈IMEI号和大体定位时间到loc-bugs@baidu.com，会有人追查原因");
-                } else if (location.getLocType() == BDLocation.TypeNetWorkException) {
-                    sb.append("\ndescribe : ");
-                    sb.append("网络不同导致定位失败，请检查网络是否通畅");
-                } else if (location.getLocType() == BDLocation.TypeCriteriaException) {
-                    sb.append("\ndescribe : ");
-                    sb.append("无法获取有效定位依据导致定位失败，一般是由于手机的原因，处于飞行模式下一般会造成这种结果，可以试着重启手机");
-                }
-                sb.append("\nlocationdescribe : ");
-                sb.append(location.getLocationDescribe());// 位置语义化信息
-                List<Poi> list = location.getPoiList();// POI数据
-                if (list != null) {
-                    sb.append("\npoilist size = : ");
-                    sb.append(list.size());
-                    for (Poi p : list) {
-                        sb.append("\npoi= : ");
-                        sb.append(p.getId() + " " + p.getName() + " " + p.getRank());
-                    }
-                }
-                Log.i("BaiduLocationApiDem", sb.toString());
-                Log.d("why",location.getAddrStr());
-                Log.d("why",location.getCity());
-                Log.d("why",location.getCityCode());
+                sb.append("\nlocType description : ");// *****对应的定位类型说明*****
+                sb.append(location.getLocTypeDescription());
+                sb.append("\ncitycode : ");// 城市编码
+                sb.append(location.getCityCode());
+                sb.append("\ncity : ");// 城市
+                sb.append(location.getCity());
                 Log.d("why",sb.toString());
-                mLocationClient.stop();
+                if(location.getCityCode()!=null){
+                    newCityCode = location.getCityCode();
+                    Toast.makeText(MainActivity.this,"定位成功", Toast.LENGTH_SHORT).show();
+                    queryWeatherCode(newCityCode);
+                }else{
+                    Toast.makeText(MainActivity.this,"定位失败", Toast.LENGTH_SHORT).show();
+                }
+            }else{
+                Toast.makeText(MainActivity.this,"服务端定位失败，请您检查是否禁用获取位置信息权限，尝试重新请求定位", Toast.LENGTH_SHORT).show();
             }
-        });    //注册监听函数
-    }
+            mLocationClient.stop();
+        }
+    };
 
 
     private void initLocation(){
@@ -208,8 +150,7 @@ public class MainActivity extends Activity implements View.OnClickListener,ViewP
         option.setLocationMode(LocationClientOption.LocationMode.Hight_Accuracy
         );//可选，默认高精度，设置定位模式，高精度，低功耗，仅设备
         option.setCoorType("bd09ll");//可选，默认gcj02，设置返回的定位结果坐标系
-        int span=1000;
-        option.setScanSpan(span);//可选，默认0，即仅定位一次，设置发起定位请求的间隔需要大于等于1000ms才是有效的
+        option.setScanSpan(0);//可选，默认0，即仅定位一次，设置发起定位请求的间隔需要大于等于1000ms才是有效的
         option.setIsNeedAddress(true);//可选，设置是否需要地址信息，默认不需要
         option.setOpenGps(true);//可选，默认false,设置是否使用gps
         option.setLocationNotify(true);//可选，默认false，设置是否当GPS有效时按照1S/1次频率输出GPS结果
@@ -328,6 +269,8 @@ public class MainActivity extends Activity implements View.OnClickListener,ViewP
             startActivity(intent);
             finish();
         }
+
+
 
 
         mProgressBar = (ProgressBar)findViewById(R.id.title_update_progress);
@@ -776,20 +719,17 @@ public class MainActivity extends Activity implements View.OnClickListener,ViewP
 
             startActivityForResult(i,1);  // (Intent intent,int requestCode)
         }
+        //定位
         if(view.getId()==R.id.title_location){
-            initFirst();
-            Log.d("why","1");
+
+
+            mLocationClient = new LocationClient(getApplicationContext());     //声明LocationClient类
+            mLocationClient.registerLocationListener(myListener);              //注册监听函数
             initLocation();
             mLocationClient.start();
-
-            Log.d("why","2");
-            Log.d("why","3");
-//            BDLocation bd = mLocationClient.getLastKnownLocation();
-//            if(bd == null){
-//                Log.d("why","1");
-//            }
-            Log.d("why",""+mLocationClient.getAccessKey());
         }
+
+        //分享
         if(view.getId()==R.id.title_share){
 
             new ShareAction(MainActivity.this).withText(shareMess)
@@ -797,6 +737,8 @@ public class MainActivity extends Activity implements View.OnClickListener,ViewP
                     .setCallback(umShareListener).open();
         }
     }
+
+
 
     protected void onActivityResult(int requestCode ,int resultCode , Intent data){
         super.onActivityResult(requestCode, resultCode, data);
