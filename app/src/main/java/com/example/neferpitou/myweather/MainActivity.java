@@ -47,12 +47,17 @@ import com.baidu.location.LocationClient;
 import com.baidu.location.LocationClientOption;
 import com.baidu.location.BDNotifyListener;//假如用到位置提醒功能，需要import该类
 import com.baidu.location.Poi;
+import com.umeng.socialize.ShareAction;
+import com.umeng.socialize.UMShareAPI;
+import com.umeng.socialize.UMShareListener;
+import com.umeng.socialize.bean.SHARE_MEDIA;
 
 /**
  * Created by Neferpitou on 2016/9/20.
  */
 public class MainActivity extends Activity implements View.OnClickListener,ViewPager.OnPageChangeListener{
     private ImageView mUpdataBtn;
+    private ImageView mShareBtn;
     private ImageView mCitySelect;
     private ProgressBar mProgressBar;
     private Animation animation;
@@ -92,23 +97,34 @@ public class MainActivity extends Activity implements View.OnClickListener,ViewP
     IntentFilter intentFilter;
 
 
-//    private ServiceConnection connection = new ServiceConnection() {
-//
-//        @Override
-//        public void onServiceConnected(ComponentName name, IBinder service) {
-//            serviceBinder = ((MyService.MyBinder)service).getService();
-//            startService(serviceIntent);
-//        }
-//
-//        @Override
-//        public void onServiceDisconnected(ComponentName name) {
-//
-//        }
-//    };
+
 
 
     public LocationClient mLocationClient = null;
     public BDLocationListener myListener = new MyLocationListener();
+
+    private UMShareListener umShareListener = new UMShareListener() {
+        @Override
+        public void onResult(SHARE_MEDIA platform) {
+
+            Toast.makeText(MainActivity.this, platform + " 分享成功啦", Toast.LENGTH_SHORT).show();
+
+        }
+
+        @Override
+        public void onError(SHARE_MEDIA platform, Throwable t) {
+            if(t!=null){
+                Toast.makeText(MainActivity.this,platform + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }else{
+                Toast.makeText(MainActivity.this,platform + " 分享失败啦", Toast.LENGTH_SHORT).show();
+            }
+        }
+
+        @Override
+        public void onCancel(SHARE_MEDIA platform) {
+            Toast.makeText(MainActivity.this,platform + " 分享取消了", Toast.LENGTH_SHORT).show();
+        }
+    };
 
     public void initFirst() {
 
@@ -319,6 +335,8 @@ public class MainActivity extends Activity implements View.OnClickListener,ViewP
         LinearInterpolator linearInterpolator = new LinearInterpolator();    //设置动画匀速运动
         animation.setInterpolator(linearInterpolator);
 
+        mShareBtn  = (ImageView) findViewById(R.id.title_share);
+        mShareBtn.setOnClickListener(this);
         mUpdataBtn = (ImageView) findViewById(R.id.title_update_btn);
         mUpdataBtn.setOnClickListener(this);    //在该类里实现了点击接口（下面的onClick方法）
         mLocation = (ImageView)findViewById(R.id.title_location);
@@ -771,12 +789,18 @@ public class MainActivity extends Activity implements View.OnClickListener,ViewP
 //                Log.d("why","1");
 //            }
             Log.d("why",""+mLocationClient.getAccessKey());
+        }
+        if(view.getId()==R.id.title_share){
 
-
+            new ShareAction(MainActivity.this).withText(shareMess)
+                    .setDisplayList(SHARE_MEDIA.SMS,SHARE_MEDIA.SINA,SHARE_MEDIA.WEIXIN, SHARE_MEDIA.WEIXIN_CIRCLE)
+                    .setCallback(umShareListener).open();
         }
     }
 
     protected void onActivityResult(int requestCode ,int resultCode , Intent data){
+        super.onActivityResult(requestCode, resultCode, data);
+        UMShareAPI.get(this).onActivityResult(requestCode, resultCode, data);
         switch (requestCode){
             case 1:
                 if(resultCode==RESULT_OK){
@@ -800,6 +824,7 @@ public class MainActivity extends Activity implements View.OnClickListener,ViewP
         }
     }
 
+    String shareMess;
     void updateTodayWeather(TodayWeather todayWeather){
         String pm = todayWeather.getPm25();
         double pmInt;
@@ -828,6 +853,9 @@ public class MainActivity extends Activity implements View.OnClickListener,ViewP
         nowTemperatureTv.setText("温度："+todayWeather.getWendu()+"℃");
         windTv.setText("风力："+todayWeather.getFengli());
         Toast.makeText(MainActivity.this,"更新成功！",Toast.LENGTH_SHORT).show();
+
+        shareMess = todayWeather.getCity()+":"+todayWeather.getDate()+",天气为:"+climate+",温度为:"+todayWeather.getHigh()+"~"+todayWeather.getLow()
+                +",湿度为:"+todayWeather.getShidu()+",风力为:"+todayWeather.getFengli()+",pm2.5为:"+pm;
         if(pmInt<=50){
             pmImg.setImageResource(R.drawable.biz_plugin_weather_0_50);
         }else if(pmInt<=100){

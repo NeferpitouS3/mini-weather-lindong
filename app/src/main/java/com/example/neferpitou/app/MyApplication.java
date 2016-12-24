@@ -7,6 +7,9 @@ import android.util.Log;
 
 import com.example.neferpitou.bean.City;
 import com.example.neferpitou.db.CityDB;
+import com.umeng.socialize.Config;
+import com.umeng.socialize.PlatformConfig;
+import com.umeng.socialize.UMShareAPI;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -24,10 +27,17 @@ public class MyApplication extends Application{
     private CityDB mCityDB;
     private List<City> mCityList;
 
+    {
+        PlatformConfig.setWeixin("wx967daebe835fbeac", "5bb696d9ccd75a38c8a0bfe0675559b3");
+        PlatformConfig.setSinaWeibo("419943956","bb56e2e5c91892c5d8c7bf25859d1a67");
+        Config.REDIRECT_URL = "www.baidu.com";
+    }
+
     @Override
     public void onCreate() {
         super.onCreate();
         Log.d(TAG,"MyApplication->Oncreate");
+        UMShareAPI.get(this);
         mApplication = this;
         mCityDB = openCityDB();
         initCityList();
