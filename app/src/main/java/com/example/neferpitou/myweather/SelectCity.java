@@ -29,6 +29,7 @@ import java.util.List;
 public class SelectCity extends Activity implements View.OnClickListener{
     private ImageView mBackBtn;
 
+    private List<City> originalCityList;
     private List<City> cityList;
     private ListView listView;
     private FirstPYComparator pinyinComparator;
@@ -91,10 +92,10 @@ public class SelectCity extends Activity implements View.OnClickListener{
         List<City> mFilterList = new ArrayList<City>();
         //TextUtils.isEmpty用来检验null和 "" 。
         if (TextUtils.isEmpty(filterStr)) {
-            mFilterList = cityList;
+            mFilterList = originalCityList;
         } else {
             mFilterList.clear();
-            for (City city : cityList) {
+            for (City city : originalCityList) {
                 String name = city.getCity();
                 String pinyin = city.getAllPY().toUpperCase();
                 String allFirstPY = city.getAllFirstPY().toUpperCase();
@@ -106,6 +107,7 @@ public class SelectCity extends Activity implements View.OnClickListener{
         // 根据a-z进行排序
         Collections.sort(mFilterList, new FirstPYComparator());
         adapter.updateListView(mFilterList);
+        cityList = mFilterList;
     }
 
     private void initViews() {
@@ -135,6 +137,7 @@ public class SelectCity extends Activity implements View.OnClickListener{
 
     public void initCity(){
         MyApplication myApplication = MyApplication.getInstance();
-        cityList = myApplication.getCityList();
+        originalCityList = myApplication.getCityList();
+        cityList = originalCityList;
     }
 }
